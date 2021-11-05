@@ -1,22 +1,78 @@
 pico-8 cartridge // http://www.pico-8.com
 version 33
 __lua__
-ball={x=1,y=1,dx=1,dy=1,r=2}
+ball={x=15,y=15,dx=2,dy=2,r=2}
 
-function _init()
- sfx(0)
- cls()
+pad={x=62,y=122,w=28,h=4,sp=5}
+
+--running time
+rt=0
+
+function ball.move(dt)
+	ball.x += ball.dx * dt
+	ball.y += ball.dy * dt
 end
 
-function _update()
- ball.x=ball.x+ball.dx
- ball.y=ball.y+ball.dy
+function ball.collision()
+	--margin
+	local marg = 6
+	
+	-- right/left side
+	if ball.x > 128-marg or
+			ball.x < 0+marg then
+		ball.dx *= -1
+	end
+
+	-- up
+	if ball.y < 0+marg then
+		ball.dy *= -1
+	end
+
+	-- paddle
+	if pget(ball.x,ball.y+ball.r+1)
+			== 12 then
+		ball.dy *= -1
+	end
+end
+
+function pad.move(dt)
+	--left
+	if (btn(0)) pad.x -=pad.sp * dt
+	--right
+	if (btn(1)) pad.x +=pad.sp * dt
+end
+
+function game()
+	-- game over
+	if ball.y > 130 then
+		cls()
+		?"game over"
+		stop()
+	end
+end
+
+--##############################
+function _init()
+	rt = t()
+end
+
+function _update60()
+	cls()
+ local dt = t() - rt
+	rt += dt
+	?dt
+	ball:move(dt)
+	--pad:move(dt)
+
+	ball:collision()
 end
 
 function _draw()
- -- cls()
+	--cls()
  circfill(ball.x,ball.y,
-  ball.r,rnd(32))
+		ball.r,10)
+	rect(pad.x,pad.y,pad.x+pad.w,
+		pad.y+pad.h,12)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
