@@ -1,13 +1,79 @@
 pico-8 cartridge // http://www.pico-8.com
-version 33
+version 34
 __lua__
+-- actors
 ball={x=15,y=15,dx=40,dy=40,r=2}
 
 pad={x=62,y=122,w=28,h=4,sp=50}
 
---running time
-rt=0
+-- game
+game={
+	sts={home=1,play=2,gameover=3},
+	cst=nil,
+}
 
+function game:upd(dt)	
+ if game.cst==game.sts.home then
+  game:title()
+ end
+
+ if game.cst==game.sts.play then
+  ball:move(dt)
+  pad:move(dt)
+
+  ball:collision()
+ end
+
+ if game.cst==game.sts.gameover then
+  game:gameover()
+ end
+end
+
+function game:draw()
+	if(game.cst!=game.sts.play) return
+ 
+ cls()
+ circfill(ball.x,ball.y,
+  ball.r,10)
+ rectfill(pad.x,pad.y,pad.x+pad.w,
+  pad.y+pad.h,12)
+end
+
+function game:title()
+ cls(3)
+ print("hello",52,60)
+ print("press ❎ to start",40,70)
+ if btn(❎) then
+ 	game.cst=game.sts.play
+ end
+end
+
+function game:gameover()
+ print("gameover")
+ stop()
+end
+
+
+function _init()
+ -- running time
+ rt=t()
+ 
+ game.cst=game.sts.home
+end
+
+function _update60()
+ local dt = t() - rt
+ rt += dt
+
+ game:upd(dt)
+end
+
+function _draw()
+ game:draw()
+end
+
+--##############################
+--ball
 function ball:move(dt)
 	self.x += self.dx * dt
 	self.y += self.dy * dt
@@ -29,49 +95,19 @@ function ball:collision()
 	end
 
 	-- paddle
-  if pget(self.x,self.y+self.r+1)
-      == 12 then
-    if (self.dy>0) self.dy *= -1
-	end
+ -- is colliding only with paddle's top side
+ if pget(self.x,self.y+self.r+1)
+   == 12 then
+  if (self.dy>0) self.dy *= -1
+ end
 end
 
+--paddle
 function pad:move(dt)
 	--left
 	if (btn(0)) self.x -=self.sp*dt
 	--right
 	if (btn(1)) self.x +=self.sp*dt
-end
-
-function game()
-	-- game over
-	if ball.y > 130 then
-		cls()
-		?"game over"
-		stop()
-	end
-end
-
---##############################
-function _init()
-	rt = t()
-end
-
-function _update60()
-  local dt = t() - rt
-  rt += dt
-
-  ball:move(dt)
-  pad:move(dt)
-
-  ball:collision()
-end
-
-function _draw()
- cls()
- circfill(ball.x,ball.y,
-  ball.r,10)
- rectfill(pad.x,pad.y,pad.x+pad.w,
-  pad.y+pad.h,12)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
