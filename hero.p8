@@ -1,16 +1,15 @@
 pico-8 cartridge // http://www.pico-8.com
 version 34
 __lua__
--- actors
-ball={x=15,y=15,dx=40,dy=40,r=2}
-
-pad={x=62,y=122,w=28,h=4,sp=50}
-
 -- game
 game={
 	sts={home=1,play=2,gameover=3},
 	cst=nil,
 }
+
+ball={x=15,y=15,dx=40,dy=40,r=2}
+
+pad={x=62,y=122,w=28,h=4,sp=50}
 
 function game:upd(dt)	
  if game.cst==game.sts.home then
@@ -29,6 +28,21 @@ function game:upd(dt)
  end
 end
 
+function game:title()
+ cls(3)
+ print("hello",52,60)
+ print("press ❎ to start",40,70)
+ if btn(❎) then
+	 game:start()
+ end
+end
+
+function game:start()
+	cls()
+	blocks:start()
+	game.cst=game.sts.play
+end
+
 function game:draw()
 	if(game.cst!=game.sts.play) return
  
@@ -37,15 +51,8 @@ function game:draw()
   ball.r,10)
  rectfill(pad.x,pad.y,pad.x+pad.w,
   pad.y+pad.h,12)
-end
-
-function game:title()
- cls(3)
- print("hello",52,60)
- print("press ❎ to start",40,70)
- if btn(❎) then
- 	game.cst=game.sts.play
- end
+ 
+ blocks:draw()
 end
 
 function game:gameover()
@@ -53,6 +60,7 @@ function game:gameover()
  stop()
 end
 
+-- #############################
 
 function _init()
  -- running time
@@ -105,10 +113,60 @@ end
 --paddle
 function pad:move(dt)
 	--left
-	if (btn(0)) self.x -=self.sp*dt
+	if (btn(⬅️)) self.x -=self.sp*dt
 	--right
-	if (btn(1)) self.x +=self.sp*dt
+	if (btn(➡️)) self.x +=self.sp*dt
 end
+
+-- blocks
+blocks={
+	w=11,
+	h=4,
+	marg=2,
+	edge=12,
+	
+	pos={},
+}
+
+function blocks:start()
+	local w=self.w
+	local h=self.h
+	local marg=self.marg
+	local edge=self.edge
+	
+	--	printh("\n")
+	local qtd=0
+	
+	for y=1,4 do
+		for x=1,8 do
+			local x0=(x-1)*(w+marg)+edge
+			local y0=(y-1)*(h+marg)+edge
+			
+			add(self.pos, {x0=x0,y0=y0})
+			
+			qtd+=1
+		end
+	end
+	
+	self.qtd=qtd
+end
+
+function blocks:draw()
+	for e in all(self.pos) do
+		
+		local x0=e.x0
+		local x1=x0+self.w
+		
+		local y0=e.y0
+		local y1=y0+self.h
+		
+		rectfill(x0,y0,x1,y1,10)
+	end
+end
+-->8
+-- 
+-->8
+-- support functions
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
