@@ -7,9 +7,9 @@ game={
 	cst=nil,
 }
 
-ball={x=62,y=62,dx=50,dy=50,r=2}
+ball={x=62,y=62,dx=40,dy=40,r=2}
 
-pad={x=62,y=122,w=28,h=4,sp=55}
+pad={x=92,y=122,w=28,h=4,sp=55}
 
 function game:upd(dt)	
  if game.cst==game.sts.home then
@@ -21,16 +21,21 @@ function game:upd(dt)
   pad:move(dt)
 
   ball:collision()
-  local block_coll=
+  local n_coll=
   		blocks:collision()
   
-  if count(block_coll) then
-   local dx=block_coll[1].dx
-   local dy=block_coll[1].dy
+  if count(n_coll) then
+  	-- normal collision
+   local x=n_coll[1]
+   local y=n_coll[2]
   	-- increment pontuation
-  	-- reflect ball
-  	ball:reflect(dx,dy)
+  	ball:reflect({x=x, y=y})
   end
+  
+  -- gameover
+  if ball.y > 128+ball.r then
+			game.cst=game.sts.gameover
+		end
  end
 
  if game.cst==game.sts.gameover then
@@ -94,12 +99,34 @@ end
 --##############################
 --ball
 function ball:move(dt)
-	self.x += self.dx * dt
-	self.y += self.dy * dt
+	if not (self.mv_x or self.mv_y)
+	then
+		self.mv_x=0
+		self.mv_y=0
+	end
+	
+	self.mv_x+=self.dx*dt
+	self.x+=self.mv_x\1
+	self.mv_x-=self.mv_x\1
+	
+	self.mv_y+=self.dy*dt
+	self.y+=self.mv_y\1
+	self.mv_y-=self.mv_y\1
+	
+	local str=self.x.." "..self.y
+	printh(str)
 end
 
-function ball:reflect(coll_dx,coll_dy)
+function ball:reflect(n)
 	-- how to do this?
+	-- r=d-2(d*n)n
+	-- where (d*n) is the dot prod
+	local dot=mat:dot(
+			{x=ball.dx, y=ball.dy},
+			{x=n.x, y=n.y})
+	
+	ball.dx=ball.dx-2*dot*n.x
+	ball.dy=ball.dy-2*dot*n.y
 end
 
 function ball:collision()
@@ -122,12 +149,6 @@ function ball:collision()
  if pget(self.x,self.y+self.r+1)
    == 12 then
   if (self.dy>0) self.dy *= -1
- end
- 
- -- bottom
- -- gameover
- if self.y > 128+self.r then
- 	game.cst=game.sts.gameover
  end
 end
 
@@ -178,88 +199,77 @@ function blocks:draw()
 	end
 end
 
----- returns blocks collided with
----- the ball
---function blocks:collision()
----- not have info about coll
----- direction and pos
---	local coll={}
---	
---	-- for each block
---	-- check if ball is colliding
---	for e in all(blocks.pos) do
---		local x=e.x0
---		local y=e.y0
---		
---		-- check rect area of block
---		-- isn't outside
---		if not (ball.y+ball.r < y or
---				ball.x-ball.r > x+blocks.w or
---				ball.y-ball.r > y+blocks.h or
---				ball.x+ball.r < x) then
---			local str="collided with "
-----			str=str..x.." "..y	
-----			printh(str)
---			-- increment pontuation
---			-- reflect ball
---			add(coll, e)
---		end
---	end
---	
---	return coll
---end
-
--- returns reflections dirs
--- of collisions
+-- returns collision normal
 function blocks:collision()
-	local ans={}
 	-- for each block
 	-- check if ball is colliding
 	for e in all(blocks.pos) do
 		local x=e.x0
 		local y=e.y0
-		local coll={}
 		-- check either ball is
 		-- touching one of the
 		-- blocks edges
-		if ball.y+ball.r >= y then
-			coll.dx=-1*sgn(ball.dx)
-			coll.dy=-1
-			add(ans, coll)
-			del(blocks.pos, e)
-			break
 		
-		elseif ball.y-ball.r <= y then
-			coll.dx=-1*sgn(ball.dx)
-			coll.dy=1
-			add(ans, coll)
-			del(blocks.pos,e)
-			break
+		if ball.x >= x and
+				ball.x <= x+blocks.w then	
+			-- up
+			if ball.y+ball.r >= y and
+					ball.y-ball.r < y then
+				del(blocks.pos, e)
+				return pack(0,-1)
+			-- down
+			elseif ball.y-ball.r <=
+					y+blocks.h and
+					ball.y+ball.r > y+blocks.h
+					then
+				del(blocks.pos, e)
+				return pack(0,1)
+			end
+		end
 		
-		-- left
-		elseif ball.x+ball.r >= x then
-			coll.dx=-1
-			coll.dy=-1*sgn(ball.dy)
-			add(ans, coll)
-			del(blocks.pos,e)
-			break
-		
-		-- right
-		elseif ball.x-ball.r <= x then
-			coll.dx=1
-			coll.dy=-1*sgn(ball.dy)
-			add(ans, coll)
-			del(blocks.pos,e)
-			break
+		if ball.y >= y and
+				ball.y <= y+blocks.h then
+			-- left
+			if ball.x+ball.r >= x 
+					and ball.x-ball.r < x then
+				del(blocks.pos, e)
+				return pack(-1,0)
+			-- right
+			elseif ball.x-ball.r <=
+					x+blocks.w and
+					ball.x+ball.r > x+blocks.w
+					then
+				del(blocks.pos, e)
+				return pack(1,0)
+			end
 		end
 	end
 	
-	return ans
+	return nil
 end
 -->8
 -- 
 -->8
 -- support functions
+
+mat={}
+
+function mat:dot(va,vb)
+	return va.x*vb.x + va.y*vb.y
+end
+
+function mat:len(v)
+	return sqrt(v.x*v.x +
+			v.y*v.y)
+end
+
+function mat:angle_to(va,vb)
+	local aux={
+			x=vb.x-va.x,
+			y=vb.y-va.y}
+	return atan2(aux.x,aux.y)
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
