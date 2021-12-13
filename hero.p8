@@ -7,9 +7,9 @@ game={
 	cst=nil,
 }
 
-ball={x=15,y=15,dx=40,dy=40,r=2}
+ball={x=62,y=62,dx=50,dy=50,r=2}
 
-pad={x=62,y=122,w=28,h=4,sp=50}
+pad={x=62,y=122,w=28,h=4,sp=55}
 
 function game:upd(dt)	
  if game.cst==game.sts.home then
@@ -21,6 +21,16 @@ function game:upd(dt)
   pad:move(dt)
 
   ball:collision()
+  local block_coll=
+  		blocks:collision()
+  
+  if count(block_coll) then
+   local dx=block_coll[1].dx
+   local dy=block_coll[1].dy
+  	-- increment pontuation
+  	-- reflect ball
+  	ball:reflect(dx,dy)
+  end
  end
 
  if game.cst==game.sts.gameover then
@@ -30,8 +40,8 @@ end
 
 function game:title()
  cls(3)
- print("hello",52,60)
- print("press ❎ to start",40,70)
+ print("hero",56,60)
+ print("press ❎ to start",30,70)
  if btn(❎) then
 	 game:start()
  end
@@ -56,6 +66,7 @@ function game:draw()
 end
 
 function game:gameover()
+	cls()
  print("gameover")
  stop()
 end
@@ -87,9 +98,13 @@ function ball:move(dt)
 	self.y += self.dy * dt
 end
 
+function ball:reflect(coll_dx,coll_dy)
+	-- how to do this?
+end
+
 function ball:collision()
 	--margin
-	local marg = 6
+	local marg=6
 	
 	-- right/left side
 	if self.x > 128-marg or
@@ -107,6 +122,12 @@ function ball:collision()
  if pget(self.x,self.y+self.r+1)
    == 12 then
   if (self.dy>0) self.dy *= -1
+ end
+ 
+ -- bottom
+ -- gameover
+ if self.y > 128+self.r then
+ 	game.cst=game.sts.gameover
  end
 end
 
@@ -134,21 +155,14 @@ function blocks:start()
 	local marg=self.marg
 	local edge=self.edge
 	
-	--	printh("\n")
-	local qtd=0
-	
 	for y=1,4 do
 		for x=1,8 do
 			local x0=(x-1)*(w+marg)+edge
 			local y0=(y-1)*(h+marg)+edge
 			
 			add(self.pos, {x0=x0,y0=y0})
-			
-			qtd+=1
 		end
 	end
-	
-	self.qtd=qtd
 end
 
 function blocks:draw()
@@ -162,6 +176,85 @@ function blocks:draw()
 		
 		rectfill(x0,y0,x1,y1,10)
 	end
+end
+
+---- returns blocks collided with
+---- the ball
+--function blocks:collision()
+---- not have info about coll
+---- direction and pos
+--	local coll={}
+--	
+--	-- for each block
+--	-- check if ball is colliding
+--	for e in all(blocks.pos) do
+--		local x=e.x0
+--		local y=e.y0
+--		
+--		-- check rect area of block
+--		-- isn't outside
+--		if not (ball.y+ball.r < y or
+--				ball.x-ball.r > x+blocks.w or
+--				ball.y-ball.r > y+blocks.h or
+--				ball.x+ball.r < x) then
+--			local str="collided with "
+----			str=str..x.." "..y	
+----			printh(str)
+--			-- increment pontuation
+--			-- reflect ball
+--			add(coll, e)
+--		end
+--	end
+--	
+--	return coll
+--end
+
+-- returns reflections dirs
+-- of collisions
+function blocks:collision()
+	local ans={}
+	-- for each block
+	-- check if ball is colliding
+	for e in all(blocks.pos) do
+		local x=e.x0
+		local y=e.y0
+		local coll={}
+		-- check either ball is
+		-- touching one of the
+		-- blocks edges
+		if ball.y+ball.r >= y then
+			coll.dx=-1*sgn(ball.dx)
+			coll.dy=-1
+			add(ans, coll)
+			del(blocks.pos, e)
+			break
+		
+		elseif ball.y-ball.r <= y then
+			coll.dx=-1*sgn(ball.dx)
+			coll.dy=1
+			add(ans, coll)
+			del(blocks.pos,e)
+			break
+		
+		-- left
+		elseif ball.x+ball.r >= x then
+			coll.dx=-1
+			coll.dy=-1*sgn(ball.dy)
+			add(ans, coll)
+			del(blocks.pos,e)
+			break
+		
+		-- right
+		elseif ball.x-ball.r <= x then
+			coll.dx=1
+			coll.dy=-1*sgn(ball.dy)
+			add(ans, coll)
+			del(blocks.pos,e)
+			break
+		end
+	end
+	
+	return ans
 end
 -->8
 -- 
