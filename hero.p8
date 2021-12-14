@@ -3,13 +3,26 @@ version 34
 __lua__
 -- game
 game={
-	sts={home=1,play=2,gameover=3},
+	sts={
+  home=1,
+  play=2,
+  gameover=3,
+ },
 	cst=nil,
 }
 
-ball={x=62,y=62,dx=40,dy=40,r=2}
+ball={
+ x=62,
+ y=62,
+ dx=1,
+ dy=1,
+ r=2,
+}
 
-pad={x=92,y=122,w=28,h=4,sp=55}
+pad={x=92,y=122,w=28,h=4,
+ vel_max=1,ac=0.1,deac=0.2,
+ vel=0,
+}
 
 function game:upd(dt)	
  if game.cst==game.sts.home then
@@ -99,22 +112,18 @@ end
 --##############################
 --ball
 function ball:move(dt)
-	if not (self.mv_x or self.mv_y)
-	then
-		self.mv_x=0
-		self.mv_y=0
-	end
-	
-	self.mv_x+=self.dx*dt
-	self.x+=self.mv_x\1
-	self.mv_x-=self.mv_x\1
-	
-	self.mv_y+=self.dy*dt
-	self.y+=self.mv_y\1
-	self.mv_y-=self.mv_y\1
-	
-	local str=self.x.." "..self.y
-	printh(str)
+ local mx,my=self.dx,self.dy
+ 
+ -- decimals values for
+ -- drawing are bad
+ -- if mx*my!=0 then
+ --  -- moving diagonally
+ --  mx*=0.707
+ --  my*=0.707
+ -- end
+
+ self.x+=mx
+ self.y+=my
 end
 
 function ball:reflect(n)
@@ -145,7 +154,8 @@ function ball:collision()
 	end
 
 	-- paddle
- -- is colliding only with paddle's top side
+ -- is colliding only with
+ -- paddle's top side
  if pget(self.x,self.y+self.r+1)
    == 12 then
   if (self.dy>0) self.dy *= -1
@@ -154,10 +164,30 @@ end
 
 --paddle
 function pad:move(dt)
+ local input=false
 	--left
-	if (btn(⬅️)) self.x -=self.sp*dt
+	if (btn(⬅️)) then
+  self.vel-=self.ac
+  input=true
+ end
 	--right
-	if (btn(➡️)) self.x +=self.sp*dt
+	if (btn(➡️)) then
+  self.vel+=self.ac
+  input=true
+ end
+
+ if not input then
+  self.vel=
+    abs(self.vel) > self.deac
+    and self.vel-self.deac*sgn(self.vel)
+    or 0
+ end
+
+ self.vel=min(abs(self.vel),
+ self.vel_max) * sgn(self.vel)
+
+ self.x+=self.vel
+ self.x=mid(0,self.x,128-self.w)
 end
 
 -- blocks
@@ -255,7 +285,7 @@ end
 mat={}
 
 function mat:dot(va,vb)
-	return va.x*vb.x + va.y*vb.y
+	return va.x*vb.x+va.y*vb.y
 end
 
 function mat:len(v)
