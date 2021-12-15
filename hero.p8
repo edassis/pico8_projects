@@ -14,8 +14,10 @@ game={
 ball={
  x=62,
  y=62,
- dx=1,
- dy=1,
+ -- movement remainder
+ rem={x=0,y=0},
+ -- direction
+ dx=1,dy=1,
  r=2,
 }
 
@@ -112,18 +114,38 @@ end
 --##############################
 --ball
 function ball:move(dt)
- local mx,my=self.dx,self.dy
+ local amount={}
+ amount.x=self.dx
+ amount.y=self.dy
  
  -- decimals values for
  -- drawing are bad
- -- if mx*my!=0 then
- --  -- moving diagonally
- --  mx*=0.707
- --  my*=0.707
- -- end
+ if amount.x*amount.y!=0 then
+  -- moving diagonally
+  -- around 70% of x/y mov
+  amount.x*=0.707
+  amount.y*=0.707
+ end
 
- self.x+=mx
- self.y+=my
+ self.rem.x+=amount.x
+ self.rem.y+=amount.y
+	
+	-- if > 0.5 bump the value
+	amount.x=flr(self.rem.x+0.5)
+	amount.y=flr(self.rem.y+0.5)
+	
+	self.rem.x-=amount.x
+	self.rem.y-=amount.y
+	
+ self.x+=amount.x
+ self.y+=amount.y
+ 
+-- printh("rem x "..self.rem.x..
+-- 		" rem y "..self.rem.y)
+-- printh("amount "..amount.x
+-- 		.." "..amount.y)
+-- printh("x "..self.x.." y "..
+-- 		self.y)
 end
 
 function ball:reflect(n)
@@ -183,10 +205,12 @@ function pad:move(dt)
     or 0
  end
 
+ --clamp velocity
  self.vel=min(abs(self.vel),
  self.vel_max) * sgn(self.vel)
 
  self.x+=self.vel
+ -- map limits
  self.x=mid(0,self.x,128-self.w)
 end
 
@@ -278,7 +302,7 @@ function blocks:collision()
 	return nil
 end
 -->8
--- 
+-- *
 -->8
 -- support functions
 
@@ -294,10 +318,17 @@ function mat:len(v)
 end
 
 function mat:angle_to(va,vb)
+ -- need test
 	local aux={
 			x=vb.x-va.x,
 			y=vb.y-va.y}
 	return atan2(aux.x,aux.y)
+end
+
+function mat:appr(init,target,step)
+	return init < target and
+			min(init+step,target) or
+			max(init-step,target)
 end
 
 __gfx__
