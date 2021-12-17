@@ -17,13 +17,17 @@ ball={
  -- movement remainder
  rem={x=0,y=0},
  -- direction
- dx=1,dy=1,
+ dx=1.5,dy=1.5,
  r=2,
 }
 
-pad={x=92,y=122,w=28,h=4,
- vel_max=1,ac=0.1,deac=0.2,
+pad={x=92,y=106,w=24,h=3,
+ vel_max=1.8,ac=0.26,deac=0.32,
  vel=0,
+}
+
+map={
+ marg={l=6,r=6,t=6,b=11},
 }
 
 function game:upd(dt)	
@@ -48,7 +52,7 @@ function game:upd(dt)
   end
   
   -- gameover
-  if ball.y > 128+ball.r then
+  if ball.y > 128-map.marg.b-ball.r then
 			game.cst=game.sts.gameover
 		end
  end
@@ -78,11 +82,31 @@ function game:draw()
  
  cls()
  circfill(ball.x,ball.y,
-  ball.r,10)
+   ball.r,10)
  rectfill(pad.x,pad.y,pad.x+pad.w,
-  pad.y+pad.h,12)
+   pad.y+pad.h,12)
+
+ map:limits_draw()
  
  blocks:draw()
+end
+
+function map:limits_draw()
+ -- area border tickness
+	local tckn=3
+ -- blank space
+	local marg={}
+ marg.sides=map.marg.l-tckn
+ marg.bot=map.marg.b-tckn
+
+ -- top
+	rectfill(marg.sides,marg.sides,128-marg.sides-1,marg.sides+tckn-1,7)
+ -- bottom
+	rectfill(marg.sides,128-tckn-marg.bot,128-marg.sides-1,128-marg.bot-1,7)
+	-- left
+	rectfill(marg.sides,marg.sides+tckn,marg.sides+tckn-1,128-tckn-marg.bot-1,7)
+	-- right
+ rectfill(128-marg.sides-tckn,marg.sides+tckn,128-marg.sides-1,128-tckn-marg.bot-1,7)
 end
 
 function game:gameover()
@@ -131,6 +155,7 @@ function ball:move(dt)
  self.rem.y+=amount.y
 	
 	-- if > 0.5 bump the value
+ -- rounds to the closest
 	amount.x=flr(self.rem.x+0.5)
 	amount.y=flr(self.rem.y+0.5)
 	
@@ -161,23 +186,22 @@ function ball:reflect(n)
 end
 
 function ball:collision()
-	--margin
-	local marg=6
 	
 	-- right/left side
-	if self.x > 128-marg or
-			self.x < 0+marg then
+	if self.x > 128-map.marg.r-self.r or
+			self.x < 0+map.marg.l+self.r then
 		self.dx *= -1
 	end
 
 	-- up
-	if self.y < 0+marg then
+	if self.y < 0+map.marg.t+self.r then
 		self.dy *= -1
 	end
 
 	-- paddle
  -- is colliding only with
  -- paddle's top side
+ -- use sprite instead of color
  if pget(self.x,self.y+self.r+1)
    == 12 then
   if (self.dy>0) self.dy *= -1
@@ -211,7 +235,7 @@ function pad:move(dt)
 
  self.x+=self.vel
  -- map limits
- self.x=mid(0,self.x,128-self.w)
+ self.x=mid(map.marg.l,self.x,128-self.w-map.marg.r)
 end
 
 -- blocks
@@ -219,7 +243,6 @@ blocks={
 	w=11,
 	h=4,
 	marg=2,
-	edge=12,
 	
 	pos={},
 }
@@ -228,14 +251,15 @@ function blocks:start()
 	local w=self.w
 	local h=self.h
 	local marg=self.marg
-	local edge=self.edge
 	
 	for y=1,4 do
 		for x=1,8 do
-			local x0=(x-1)*(w+marg)+edge
-			local y0=(y-1)*(h+marg)+edge
+			local x0=(x-1)*(w+marg)
+     +map.marg.l+6
+			local y0=(y-1)*(h+marg)
+     +map.marg.t+2
 			
-			add(self.pos, {x0=x0,y0=y0})
+			add(self.pos,{x0=x0,y0=y0})
 		end
 	end
 end
