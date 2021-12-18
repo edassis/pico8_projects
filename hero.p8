@@ -9,6 +9,7 @@ game={
   gameover=3,
  },
 	cst=nil,
+ score=0,
 }
 
 ball={
@@ -18,6 +19,7 @@ ball={
  rem={x=0,y=0},
  -- direction
  dx=1.5,dy=1.5,
+ -- dx=0,dy=0,
  r=2,
 }
 
@@ -47,7 +49,7 @@ function game:upd(dt)
   	-- normal collision
    local x=n_coll[1]
    local y=n_coll[2]
-  	-- increment pontuation
+  	game.score+=10
   	ball:reflect({x=x, y=y})
   end
   
@@ -89,30 +91,62 @@ function game:draw()
  map:limits_draw()
  
  blocks:draw()
-end
-
-function map:limits_draw()
- -- area border tickness
-	local tckn=3
- -- blank space
-	local marg={}
- marg.sides=map.marg.l-tckn
- marg.bot=map.marg.b-tckn
-
- -- top
-	rectfill(marg.sides,marg.sides,128-marg.sides-1,marg.sides+tckn-1,7)
- -- bottom
-	rectfill(marg.sides,128-tckn-marg.bot,128-marg.sides-1,128-marg.bot-1,7)
-	-- left
-	rectfill(marg.sides,marg.sides+tckn,marg.sides+tckn-1,128-tckn-marg.bot-1,7)
-	-- right
- rectfill(128-marg.sides-tckn,marg.sides+tckn,128-marg.sides-1,128-tckn-marg.bot-1,7)
+ game:display_draw()
 end
 
 function game:gameover()
 	cls()
  print("gameover")
  stop()
+end
+
+function game:display_draw()
+ local s=rt
+ local m=s\60
+ s-=m*60
+ s=tostr(flr(s))
+ s=#s==1 and "0"..s or s
+
+ local str="tempo:"
+ local aux=tostr(m)
+ -- reserved spaces at left
+ for i=1,3-#aux do
+  str=str.." "
+ end
+
+ str=str..m..":"..s
+ print(str,map.marg.l,128-5,7)
+
+ str="score:"
+
+ local x=game.score==0 and 1
+   or game.score
+
+ while x<100 do
+  str..="0"
+  x*=10
+ end
+ str..=game.score
+ 
+ print(str,128-#str*4-map.marg.r,128-5,7)
+end
+
+function map:limits_draw()
+ -- area border tickness
+ local tckn=3
+ -- blank space
+ local marg={}
+ marg.sides=map.marg.l-tckn
+ marg.bot=map.marg.b-tckn
+
+ -- top
+ rectfill(marg.sides,marg.sides,128-marg.sides-1,marg.sides+tckn-1,7)
+ -- bottom
+ rectfill(marg.sides,128-tckn-marg.bot,128-marg.sides-1,128-marg.bot-1,7)
+ -- left
+ rectfill(marg.sides,marg.sides+tckn,marg.sides+tckn-1,128-tckn-marg.bot-1,7)
+ -- right
+ rectfill(128-marg.sides-tckn,marg.sides+tckn,128-marg.sides-1,128-tckn-marg.bot-1,7)
 end
 
 -- #############################
@@ -186,7 +220,6 @@ function ball:reflect(n)
 end
 
 function ball:collision()
-	
 	-- right/left side
 	if self.x > 128-map.marg.r-self.r or
 			self.x < 0+map.marg.l+self.r then
