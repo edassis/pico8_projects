@@ -42,16 +42,17 @@ ball={
  x=62,
  y=62,
  -- movement remainder
- rem={x=0,y=0,rot=0},
+ rem={x=0,y=0},
  -- direction
  dx=1.3,dy=1.3,
+ vel_max=3, 
  -- dx=0,dy=0,
  rot=2*(2*mat.pi),
  crot=0,
- r=2,
+ r=2, -- radius
  anim={0,1},
  anim_i=1,
- -- tanim=0.0,
+
  anim_upd=function(t,dt)
   local pi2=2*mat.pi
   local srot=abs(t.rot)*dt%pi2*sgn(t.rot)
@@ -61,8 +62,13 @@ ball={
     or t.crot
 
   local frame=t.crot/pi2
-  frame=flr(frame*(#t.anim)+0.5)
+  -- can be 0
+  local anim_l=#t.anim
+  -- frame=flr((1/anim_l+frame)*(anim_l))
+  frame=1+flr((frame)*(anim_l))
+  frame=mid(1,frame,anim_l)
 
+  -- printh("frame:"..frame)
   t.anim_i=frame
   return t.anim_i
  end,
@@ -75,8 +81,6 @@ pad={x=92,y=112,w=24,h=3,
  anim_w=3,
  anim_h=1,
 }
--- pad.w=pad.anim_w*8
--- pad.h=pad.anim_h*8
 
 map={
  marg={l=6,r=6,t=6,b=11},
@@ -223,9 +227,10 @@ function ball:move(dt)
  local amount={}
  amount.x=self.dx
  amount.y=self.dy
- 
- -- decimals values for
- -- drawing are bad
+
+ amount.x=mid(-self.vel_max,amount.x,self.vel_max) 
+ amount.y=mid(-self.vel_max,amount.y,self.vel_max) 
+
  if amount.x*amount.y!=0 then
   -- moving diagonally
   -- around 70% of x/y mov
@@ -260,7 +265,7 @@ function ball:reflect(n)
 	-- r=d-2(d*n)n
 	-- where (d*n) is the dot prod
 	local dot=mat:dot(
-			{x=ball.dx, y=ball.dy},
+	  {x=ball.dx, y=ball.dy},
 			{x=n.x, y=n.y})
 	
 	ball.dx=ball.dx-2*dot*n.x
@@ -269,28 +274,51 @@ end
 
 function ball:collision()
 	-- right/left side
-	if self.x > 128-(map.marg.r+self.r) or
-			self.x < 0+map.marg.l+self.r then
+	if self.dx>0 and
+  self.x > 128-(map.marg.r+self.r)
+  or self.dx<0 and
+  self.x < 0+map.marg.l+self.r
+ then
 		self.dx *= -1
 	end
 
 	-- up
-	if self.y < 0+map.marg.t+self.r then
+	if self.dy<0 and
+   self.y < 0+map.marg.t+self.r
+ then
 		self.dy *= -1
 	end
 
-	-- paddle
- -- is colliding only with
- -- paddle's top side
- -- use sprite instead of color
- if pget(self.x,self.y+self.r+1)
-   == 5 then
-  if (self.dy>0) self.dy *= -1
+ -- collides with paddle's top side
+ -- +use sprite instead of color
+ local bot1=pget(self.x-(self.r+1),self.y+(self.r+1))==5
+ local bot2=pget(self.x,self.y+(self.r+1))==5
+ local bot3=pget(self.x+(self.r+1),self.y+(self.r+1))==5
+ if bot1 or bot2 or bot3 then
+  -- is moving downwards
+  if self.dy>0 then 
+   self.dy *= -1
+  -- manipulate rot/dir speed
+  -- paddle is moving
+   if pad.vel~=0 then
+    if sgn(self.dx)==sgn(pad.vel) then
+     self.crot*=-2
+     self.dx+=(0.5+0.1*self.dx)*sgn(self.dx)
+     self.dy-=(0.2+0.1*self.dy)*sgn(self.dy)
+    else -- different directions
+     self.crot=self.rot*-sgn(pad.vel)
+     self.dx-=(0.2+0.1*self.dx)*sgn(self.dx)
+     self.dy+=(0.4+0.15*self.dy)*sgn(self.dy)
+    end
+   else -- pad not moving
+    self.crot=self.rot*sgn(pad.vel)
+   end
+  end
  end
 end
 
 function ball:draw()
- spr(self.anim[self.canim],self.x-4,self.y-4)
+ spr(self.anim[self.anim_i],self.x-4,self.y-4)
 end
 
 --paddle
