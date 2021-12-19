@@ -44,8 +44,8 @@ ball={
  -- movement remainder
  rem={x=0,y=0,rot=0},
  -- direction
- -- dx=1.3,dy=1.3,
- dx=0,dy=0,
+ dx=1.3,dy=1.3,
+ -- dx=0,dy=0,
  rot=2*(2*mat.pi),
  crot=0,
  r=2,
@@ -116,6 +116,17 @@ function game:upd(dt)
  end
 end
 
+function game:draw()
+ if(game.cst!=game.sts.play) return
+ 
+ cls()
+ map:limits_draw()
+ game:display_draw()
+ blocks:draw()
+ pad:draw()
+ ball:draw()
+end
+
 function game:title()
  cls(3)
  print("hero",56,60)
@@ -129,17 +140,6 @@ function game:start()
 	cls()
 	blocks:start()
 	game.cst=game.sts.play
-end
-
-function game:draw()
-	if(game.cst!=game.sts.play) return
- 
- cls()
- -- map:limits_draw()
- -- game:display_draw()
- -- blocks:draw()
- pad:draw()
- -- ball:draw()
 end
 
 function game:gameover()
@@ -320,15 +320,13 @@ function pad:move(dt)
 
  self.x+=self.vel
  -- map limits
- self.x=mid(map.marg.l,self.x,128-self.w-map.marg.r)
+ self.x=mid(map.marg.l+self.w/2,self.x,128-map.marg.r-self.w/2)
 end
 
 function pad:draw()
  local x=self.x-self.anim_w*8/2
  local y=self.y-self.anim_h*8/2
- printh("x:"..x.." ".."y:"..y)
- printh("anim:"..self.anim[1])
- spr(self.anim[1],x,y,self.anim.w,self.anim.h)
+ spr(self.anim[1],x,y,self.anim_w,self.anim_h)
 end
 -- blocks
 blocks={
