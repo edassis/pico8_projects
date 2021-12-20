@@ -45,7 +45,7 @@ ball={
  rem={x=0,y=0},
  -- direction
  dx=1.3,dy=1.3,
- vel_max=3, 
+ vel_max=2.2, 
  -- dx=0,dy=0,
  rot=2*(2*mat.pi),
  crot=0,
@@ -75,7 +75,7 @@ ball={
 }
 
 pad={x=92,y=112,w=24,h=3,
- vel_max=1.8,ac=0.26,deac=0.32,
+ vel_max=1.9,ac=0.26,deac=0.32,
  vel=0,
  anim={16},
  anim_w=3,
@@ -291,9 +291,9 @@ function ball:collision()
 
  -- collides with paddle's top side
  -- +use sprite instead of color
- local bot1=pget(self.x-(self.r+1),self.y+(self.r+1))==5
+ local bot1=pget(self.x-(self.r+2),self.y+(self.r+1))==5
  local bot2=pget(self.x,self.y+(self.r+1))==5
- local bot3=pget(self.x+(self.r+1),self.y+(self.r+1))==5
+ local bot3=pget(self.x+(self.r+2),self.y+(self.r+1))==5
  if bot1 or bot2 or bot3 then
   -- is moving downwards
   if self.dy>0 then 
@@ -301,17 +301,25 @@ function ball:collision()
   -- manipulate rot/dir speed
   -- paddle is moving
    if pad.vel~=0 then
+    -- ball and paddle moving
+    -- to the same direction
     if sgn(self.dx)==sgn(pad.vel) then
-     self.crot*=-2
-     self.dx+=(0.5+0.1*self.dx)*sgn(self.dx)
-     self.dy-=(0.2+0.1*self.dy)*sgn(self.dy)
+     self.crot=self.rot/2*-sgn(self.dx)
+     self.dx+=(0.6+0.2*abs(self.dx))*sgn(self.dx)
+     -- self.dy-=(0.1+0.15*abs(self.dy))*sgn(self.dy)
+     self.dy-=(0.2*abs(self.dy))*sgn(self.dy)
     else -- different directions
-     self.crot=self.rot*-sgn(pad.vel)
-     self.dx-=(0.2+0.1*self.dx)*sgn(self.dx)
-     self.dy+=(0.4+0.15*self.dy)*sgn(self.dy)
+     self.crot=2*self.rot*-sgn(self.dx)
+     self.dx-=(1.2-0.1*abs(self.dx))*sgn(self.dx)
+     self.dy+=(0.2+0.15*abs(self.dy))*sgn(self.dy)
     end
    else -- pad not moving
-    self.crot=self.rot*sgn(pad.vel)
+    self.crot=self.rot*sgn(self.crot)
+    self.dx-=0.3*self.dx
+    self.dy-=0.1*self.dy
+    -- default value
+    self.dx=max(abs(self.dx), 1.3)*sgn(self.dx)
+    self.dy=max(abs(self.dy), 1.3)*sgn(self.dy)
    end
   end
  end
@@ -324,6 +332,7 @@ end
 --paddle
 function pad:move(dt)
  local input=false
+ local npos={x=self.x,y=self.y}
 	--left
 	if (btn(⬅️)) then
   self.vel-=self.ac
@@ -346,9 +355,14 @@ function pad:move(dt)
  self.vel=min(abs(self.vel),
  self.vel_max) * sgn(self.vel)
 
- self.x+=self.vel
+ npos.x+=self.vel
+
  -- map limits
- self.x=mid(map.marg.l+self.w/2,self.x,128-map.marg.r-self.w/2)
+ npos.x=mid(map.marg.l+self.w/2,npos.x,128-map.marg.r-self.w/2)
+ -- update velocity
+ self.vel=npos.x-self.x
+ -- update position
+ self.x=npos.x
 end
 
 function pad:draw()
