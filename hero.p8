@@ -65,8 +65,7 @@ ball={
   -- can be 0
   local anim_l=#t.anim
   -- frame=flr((1/anim_l+frame)*(anim_l))
-  frame=1+flr((frame)*(anim_l))
-  frame=mid(1,frame,anim_l)
+  frame=ceil(frame*anim_l)
 
   -- printh("frame:"..frame)
   t.anim_i=frame
@@ -159,27 +158,20 @@ function game:display_draw()
  s=tostr(flr(s))
  s=#s==1 and "0"..s or s
 
- local str="time:"
- local aux=tostr(m)
+ local str="time: "
  -- reserved spaces at left
- for i=1,3-#aux do
-  str=str.." "
+ for i=1,2-#tostr(m) do
+  str=str.."0"
  end
-
- str=str..m..":"..s
+ str..=m..":"..s
  print(str,map.marg.l,128-5,7)
 
- str="score:"
-
- local x=game.score==0 and 1
-   or game.score
-
- while x<100 do
+ str="score: "
+ for i=1,3-#tostr(game.score) do
   str..="0"
-  x*=10
  end
  str..=game.score
- 
+ -- 4=char width
  print(str,128-#str*4-map.marg.r,128-5,7)
 end
 
@@ -234,6 +226,7 @@ function ball:move(dt)
  if amount.x*amount.y!=0 then
   -- moving diagonally
   -- around 70% of x/y mov
+  -- to preserve speed
   amount.x*=0.707
   amount.y*=0.707
  end
@@ -275,9 +268,9 @@ end
 function ball:collision()
 	-- right/left side
 	if self.dx>0 and
-  self.x > 128-(map.marg.r+self.r)
-  or self.dx<0 and
-  self.x < 0+map.marg.l+self.r
+   self.x > 128-(map.marg.r+self.r)
+   or self.dx<0 and
+   self.x < 0+map.marg.l+self.r
  then
 		self.dx *= -1
 	end
@@ -286,7 +279,7 @@ function ball:collision()
 	if self.dy<0 and
    self.y < 0+map.marg.t+self.r
  then
-		self.dy *= -1
+		self.dy*=-1
 	end
 
  -- collides with paddle's top side
@@ -297,7 +290,7 @@ function ball:collision()
  if bot1 or bot2 or bot3 then
   -- is moving downwards
   if self.dy>0 then 
-   self.dy *= -1
+   self.dy*=-1
   -- manipulate rot/dir speed
   -- paddle is moving
    if pad.vel~=0 then
